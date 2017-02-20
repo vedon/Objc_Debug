@@ -153,7 +153,7 @@ dispatch_barrier_sync(self.barrierQueue, ^{
     if (!operation) {
         operation = createCallback();
 
-        // !!!!!!!特别注意这行!!!!!!!!!
+        // ****注意这行****
         self.URLOperations[url] = operation;
 
         __weak SDWebImageDownloaderOperation *woperation = operation;
@@ -166,15 +166,45 @@ dispatch_barrier_sync(self.barrierQueue, ^{
         };
     }
 
-// !!!!!!!特别注意这行!!!!!!!!!
+// ****注意这行****
 id downloadOperationCancelToken = [operation addHandlersForProgress:progressBlock completed:completedBlock];
 }
 ```
 SDWebImage的下载器会根据URL做下载任务对应NSOperation映射，相同的URL会映射到同一个未执行的NSOperation。当A组图片下载完成后，相同的url 回调是 GroupB 而不是Group A。此时Group B的计数为1 。当B 组图片全部下载完后，结束计数为 5+1 。因为enter 的次数为5 ,leave 的次数为6 ,因此会崩溃！
 
 
-##0x5
+##0x5 最后一个持有者释放后的崩溃
 
-AR 红包崩溃 （coming soon）
+对象A被 manager 持有，在A中调用[Manager removeObjectA]。A对象的retainCount -1,当retainCount 等于零时，对象A已经开始释放了。在调用removeObjectA 后，紧接着调用[self doSomething],就会崩溃。
+
+```
+- (void)finishEditing
+{
+	[Manager removeObject:self];
+	[self doSomething];
+}
+
+```
+这种情况一般会发生在数组或者字典包含对象，而且是对象的最后持有者。当在对象处理不好，就会有上面的崩溃。还有一种情况就是，当数组或者字典里面的对象已经被释放了，当遍历数组或者取字典里面的值发生崩溃。这种情况，会让人很崩溃，因为有时候堆栈是这样的：
 
 
+```
+Thread 0 Crashed:
+0   libobjc.A.dylib                 0x00000001816ec160 _objc_release :16 (in libobjc.A.dylib)
+1   libobjc.A.dylib                 0x00000001816edae8 __ZN12_GLOBAL__N_119AutoreleasePoolPage3popEPv :508 (in libobjc.A.dylib)
+2   CoreFoundation                  0x0000000181f4c9fc __CFAutoreleasePoolPop :28 (in CoreFoundation)
+3   CoreFoundation                  0x0000000182022bc0 ___CFRunLoopRun :1636 (in CoreFoundation)
+4   CoreFoundation                  0x0000000181f4cc50 _CFRunLoopRunSpecific :384 (in CoreFoundation)
+5   GraphicsServices                0x0000000183834088 _GSEventRunModal :180 (in GraphicsServices)
+6   UIKit                           0x0000000187236088 _UIApplicationMain :204 (in UIKit)
+7   Tmall4iPhone                    0x00000001000b7ae4 main main.m:50 (in Tmall4iPhone)
+8   libdyld.dylib                   0x0000000181aea8b8 _start :4 (in libdyld.dylib)
+
+```
+产生这种堆栈可能的场景是：
+**释放Dictionary的时候，某个值(value)因为被其他代码提前释放变成野指针, 此时再次被释放触发Crash. 如果可以在每个Dictionary释放的时候, 把所有的key/value打出来, 如果某个key/value刚好被打出来之后, crash就发生了, 那么挂就挂在刚被打出来的key/value上.**
+
+
+##0x6 SceneKit 的崩溃
+
+（comning soon）
