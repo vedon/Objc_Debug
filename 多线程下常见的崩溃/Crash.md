@@ -2,7 +2,7 @@
 
 #多线程常见崩溃
 
-##0x0
+##0x0 Block 回调的崩溃
 在MRC环境下，使用Block 来设置下载成功的图片。当self释放后，weakSelf变成野指针,接着就悲剧了
 
 ```
@@ -14,7 +14,7 @@
  
 ```
 
-##0x1 
+##0x1 多线程下Setter 的崩溃
 Getter & Setter 写多了，在单线程的情况下，是没有问题的。但是在多线程的情况下，可能会崩溃。因为***[_imageView release];*** 这段代码可能会被执行两次，oops!
 
 UIKit 不是线程，所以在不是主线程的地方调用UIKit 的东西，有可能在开发阶段完全没问题，直接免测。但是一到线上，崩溃系统可能都是你的崩溃日志。Holy shit!
@@ -35,7 +35,7 @@ UIKit 不是线程，所以在不是主线程的地方调用UIKit 的东西，�
 ```
 
 
-##0x2
+##0x2 更多Setter 类型的崩溃
 property 的属性，写的最多的就是nonatomic，一般情况下也是没有问题的！
 
 ```
@@ -62,7 +62,42 @@ for (int i = 0; i < 100; i++) {
 
 解决办法：属性声明为atomic.
 
-##0x3
+一个更为常见的例子：
+
+```
+if(handler == nil)
+{
+	hander = [[Handler alloc] init];
+}
+
+return handler;
+```
+
+如果A,B两个线程同时访问到if语句, 此时handler == nil条件满足, 两个线程都走到下一句初始化实例.
+此时A线程先完成初始化并赋值(这个实例我们叫它a), 然后继续往后走到其他逻辑.而这时候, B线程开始做初始化并赋值(这个实例我们叫它b), handler将指向B线程初始化出来的对象. 而A初始化出来的实例a因为引用计数减少1(减少到0)而被释放. 但在A线程中, 代码还会尝试访问a所在的地址, 这个地址里的内容因为被释放而变得无法预测, 从而导致野指针.
+
+问题还有一个很关键的点, 在一个对象的某个方法的调用过程中, 这个对象的引用计数并不会增加, 到导致它如果被释放, 后续的执行过程中对这个对象的访问就可能会导致野指针[1].
+
+```
+Exception Type:  SIGSEGV
+Exception Codes: SEGV_ACCERR at 0x12345678
+Triggered by Thread:  1
+```
+
+简单加个锁就可以解决问题了：
+
+```
+ @synchronized(self){
+ 	if(handler == nil)
+	{
+		hander = [[Handler alloc] init];
+	}
+ }
+return handler;
+```
+
+
+##0x3 多线程下对变量的存取
 ```
 if (self.xxx) {
     [self.dict setObject:@"ah" forKey:self.xxx];
@@ -82,7 +117,7 @@ if (val) {
 
 这样，无论多少线程尝试对self.xxx进行修改，本质上的val都会保持现有的状态，符合非nil的判断。
 
-##0x4
+##0x4 dispatch_group 的崩溃
 ```dispatch_group_enter``` 和 leave 必须是匹配的，不然就会crash . 在多资源下载的时候，往往需要使用多线程并发下载，全部下载完之后通知用户。开始下载，```dispatch_group_enter``` ,下载完成```dispatch_group_leave``` 。 非常简单的流程，但是当代码复杂到一定程度或者是使用了一些第三方库的时候，就很大可能出问题。
 
 
