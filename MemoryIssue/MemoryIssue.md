@@ -1,14 +1,14 @@
 
-#爆内存 - Memory issue
+# 爆内存 - Memory issue
 
-##收集不到的崩溃日志？
+## 收集不到的崩溃日志？
 
 >  做iOS的都知道，爆内存导致的闪退是无法收集的。如何定位这个问题，一般都是使用苹果提供的工具：Allocation 和 VM Tracker.使用的前提是，必须要连着电脑，无法通过这种手段定位线上的爆内存问题。
 
 
 
 
-##在iOS系统上，谁负责kill 掉程序释放内存？
+## 在iOS系统上，谁负责kill 掉程序释放内存？
 
 从这篇文章：[No pressure, Mon!
 ](http://www.newosxbook.com/articles/MemoryPressure.html)可以了解到，它叫：**Jetsam**. 在以下两种情况，程序会被kill掉。
@@ -23,7 +23,7 @@
 <img src="./2.png" width = "300" height = "300" alt="图片名称" align=center />
 
 
-##内存有分类吗？
+## 内存有分类吗？
 
 1) Clean Memory 
 > * System framework
@@ -49,7 +49,7 @@
 ![](./5.png)
 
 
-##爆内存的解决方案？
+## 爆内存的解决方案？
 
 除了在应用内采取一系列的清理内存以及优化内存使用的操作，但是dirty的内存是没有办法处理的，只会累积。因此，确定程序哪里产生了dirty的内存至关重要！ 目前想到的方法是：Hook 系统底层堆内存及VM内存分配的相关方法，记录每一个内存块的分配信息，包括分配堆栈、累计分配次数、累计分配内存。在内存超过一定的阀值时候，将这些信息dump到本地磁盘。
 
@@ -58,7 +58,8 @@ TODO : 如何不影响正常使用的前提下，高效的hook系统底层方法
 
 
 
-##参考资料
+## 参考资料
+
 [VM Tracker 详解](http://liam.flookes.com/wp/2012/05/03/finding-ios-memory/)
 
 [内存分类](http://stackoverflow.com/questions/13437365/what-is-resident-and-dirty-memory-of-ios)
