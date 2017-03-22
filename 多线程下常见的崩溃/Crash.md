@@ -1,8 +1,8 @@
 
 
-#多线程常见崩溃
+# 多线程常见崩溃
 
-##0x0 Block 回调的崩溃
+## 0x0 Block 回调的崩溃
 在MRC环境下，使用Block 来设置下载成功的图片。当self释放后，weakSelf变成野指针,接着就悲剧了
 
 ```
@@ -14,7 +14,7 @@
  
 ```
 
-##0x1 多线程下Setter 的崩溃
+## 0x1 多线程下Setter 的崩溃
 Getter & Setter 写多了，在单线程的情况下，是没有问题的。但是在多线程的情况下，可能会崩溃。因为***[_imageView release];*** 这段代码可能会被执行两次，oops!
 
 UIKit 不是线程，所以在不是主线程的地方调用UIKit 的东西，有可能在开发阶段完全没问题，直接免测。但是一到线上，崩溃系统可能都是你的崩溃日志。Holy shit!
@@ -35,7 +35,7 @@ UIKit 不是线程，所以在不是主线程的地方调用UIKit 的东西，�
 ```
 
 
-##0x2 更多Setter 类型的崩溃
+## 0x2 更多Setter 类型的崩溃
 property 的属性，写的最多的就是nonatomic，一般情况下也是没有问题的！
 
 ```
@@ -97,7 +97,7 @@ return handler;
 ```
 
 
-##0x3 多线程下对变量的存取
+## 0x3 多线程下对变量的存取
 ```
 if (self.xxx) {
     [self.dict setObject:@"ah" forKey:self.xxx];
@@ -117,7 +117,7 @@ if (val) {
 
 这样，无论多少线程尝试对self.xxx进行修改，本质上的val都会保持现有的状态，符合非nil的判断。
 
-##0x4 dispatch_group 的崩溃
+## 0x4 dispatch_group 的崩溃
 ```dispatch_group_enter``` 和 leave 必须是匹配的，不然就会crash . 在多资源下载的时候，往往需要使用多线程并发下载，全部下载完之后通知用户。开始下载，```dispatch_group_enter``` ,下载完成```dispatch_group_leave``` 。 非常简单的流程，但是当代码复杂到一定程度或者是使用了一些第三方库的时候，就很大可能出问题。
 
 
@@ -173,7 +173,7 @@ id downloadOperationCancelToken = [operation addHandlersForProgress:progressBloc
 SDWebImage的下载器会根据URL做下载任务对应NSOperation映射，相同的URL会映射到同一个未执行的NSOperation。当A组图片下载完成后，相同的url 回调是 GroupB 而不是Group A。此时Group B的计数为1 。当B 组图片全部下载完后，结束计数为 5+1 。因为enter 的次数为5 ,leave 的次数为6 ,因此会崩溃！
 
 
-##0x5 最后一个持有者释放后的崩溃
+## 0x5 最后一个持有者释放后的崩溃
 
 对象A被 manager 持有，在A中调用[Manager removeObjectA]。A对象的retainCount -1,当retainCount 等于零时，对象A已经开始释放了。在调用removeObjectA 后，紧接着调用[self doSomething],就会崩溃。
 
@@ -205,6 +205,9 @@ Thread 0 Crashed:
 **释放Dictionary的时候，某个值(value)因为被其他代码提前释放变成野指针, 此时再次被释放触发Crash. 如果可以在每个Dictionary释放的时候, 把所有的key/value打出来, 如果某个key/value刚好被打出来之后, crash就发生了, 那么挂就挂在刚被打出来的key/value上.**
 
 
-##0x6 SceneKit 的崩溃
+## 0x6 对象的释放线程要和它处理事情的线程一致
+
+对象A在主线程监听Notification事件，如果这个对象被其它线程释放了。此刻，如果对象A 正在执行notification 相关的操作，再访问对象相关资源就野指针了，发生crash.
+
 
 （comning soon）
