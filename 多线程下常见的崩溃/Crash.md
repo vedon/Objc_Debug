@@ -210,4 +210,21 @@ Thread 0 Crashed:
 对象A在主线程监听Notification事件，如果这个对象被其它线程释放了。此刻，如果对象A 正在执行notification 相关的操作，再访问对象相关资源就野指针了，发生crash.
 
 
-（comning soon）
+## 0x7 performSelector:withObject:afterDelay:
+
+调用此方法，如果不是在主线程，那么必须要确保当前线程的ruuloop是存在的，performSelector_xxx_afterDelay 依赖runlopp才能执行。另外使用 performSelector:withObject:afterDelay:和 cancelPreviousPerformRequestsWithTarget 组合的时候要小心。
+
+> * afterDelay会增加receiver的引用计数，cancel则会对应减一
+> * 如果在receiver的引用计数只剩下1 （仅为delay）时，调用cancel之后会立即销毁receiver，后续再调用receiver的方法就会crash
+
+```
+__weak typeof(self) weakSelf = self;
+[NSObject cancelPreviousPerformRequestsWithTarget:self];
+if (!weakSelf)
+{
+//NSLog(@"self被销毁");
+    return;
+}
+
+[self doOther];
+```
