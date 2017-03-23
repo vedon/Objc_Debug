@@ -1,13 +1,13 @@
-##lldb 调试实战
+## lldb 调试实战
 
-###0x0 命令结构
+### 0x0 命令结构
 ```
 <noun> <verb> [-options [option-value]] [argument [argument...]]
 
 ```
 其中options和argument是可选的.
 
-###0x1 常用命令
+### 0x1 常用命令
 
 1，设置断点：
 
@@ -52,7 +52,7 @@ $符号在LLDB中代表着变量的分配。每次使用p后，会自动为你�
 
 ```
 
-###0x2 Thread && Frame
+### 0x2 Thread && Frame
 
 用bt 打印出当前线程的堆栈信息，
 
@@ -85,7 +85,7 @@ frame-format (format-string) = "frame #${frame.index}: ${frame.pc}{ ${module.fil
 
 上面截出来的信息中, thread #1和frame #1前面有一个*, 代表当前选中的thread和frame.可以通过frame variable命令(缩写fr v)查看当前frame的变量:
 
-###0x3  常用的指令
+### 0x3  常用的指令
 
 ```
 bt // 打出当前thread的backtrace
@@ -118,7 +118,7 @@ im lookup -t NSString // 从镜像中查找类型NSString
 ```
 
 
-###0x4 参考
+### 0x4 参考
 [LLDB - GETTING STARTED](http://lldb.llvm.org/tutorial.html)
 
 [LLDB - GDB TO LLDB COMMAND MAP](http://lldb.llvm.org/lldb-gdb.html)
